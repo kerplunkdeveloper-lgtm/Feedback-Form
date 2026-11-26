@@ -1,5 +1,7 @@
 import { Fragment, useRef, useState } from 'react'
 import StarRating from './StarRating.jsx'
+import VoiceStep from './VoiceStep.jsx'
+import { VOICE_ITEMS } from '../voiceItems.js'
 
 const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL
 
@@ -11,6 +13,11 @@ const SENTIMENTS = [
 
 const STEPS = [
   { title: 'Rating', heading: 'How would you rate us?' },
+  {
+    title: 'Kerplunk Voice',
+    heading: 'Kerplunk Voice',
+    sub: 'Your voice matters. Rate each area, and add a comment wherever you have something to say.',
+  },
   { title: 'Feedback', heading: 'Share your feedback', sub: 'Good or bad, be honest. Nobody will know it was you.' },
 ]
 
@@ -19,6 +26,7 @@ const MAX = 1000
 const initialState = {
   overallRating: 0,
   sentiment: '',
+  voice: Object.fromEntries(VOICE_ITEMS.map((v) => [v.key, { rating: 0, comment: '' }])),
   feedback: '',
   website: '', // honeypot – real users never see/fill this
 }
@@ -27,7 +35,14 @@ function validateStep(step, form) {
   const e = {}
   if (step === 0 && !form.overallRating) e.overallRating = 'Please pick a star rating to continue.'
   if (step === 0 && !form.sentiment) e.sentiment = 'Please choose how your experience felt.'
-  if (step === 1 && !form.feedback.trim()) {
+  if (step === 1) {
+    const missing = VOICE_ITEMS.filter((v) => !form.voice[v.key].rating).map((v) => v.key)
+    if (missing.length) {
+      e.voice = `Please rate all ${VOICE_ITEMS.length} areas (${missing.length} left).`
+      e.missing = missing
+    }
+  }
+  if (step === 2 && !form.feedback.trim()) {
     e.text = 'Please write a few words of feedback.'
   }
   return e
@@ -59,6 +74,24 @@ export default function FeedbackForm() {
   const failStep = (e) => {
     setErrors(e)
     setShake((n) => n + 1)
+    if (e.missing?.length) {
+      setTimeout(() => {
+        document
+          .getElementById(`voice-${e.missing[0]}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 60)
+    }
+  }
+
+  const setVoice = (key, value) => {
+    setForm((f) => ({ ...f, voice: { ...f.voice, [key]: value } }))
+    setErrors((e) => {
+      if (!e.missing) return e
+      const missing = e.missing.filter((k) => k !== key || !value.rating)
+      return missing.length
+        ? { ...e, missing, voice: `Please rate all ${VOICE_ITEMS.length} areas (${missing.length} left).` }
+        : {}
+    })
   }
 
   const next = () => {
@@ -88,6 +121,11 @@ export default function FeedbackForm() {
     const { website, ...data } = form
     const payload = {
       ...data,
+      voice: VOICE_ITEMS.map((v) => ({
+        key: v.key,
+        rating: data.voice[v.key].rating,
+        comment: data.voice[v.key].comment.trim(),
+      })),
       feedback: data.feedback.trim(),
       submittedAt: new Date().toISOString(),
     }
@@ -215,12 +253,27 @@ export default function FeedbackForm() {
 
               {step === 1 && (
                 <>
+                  <VoiceStep
+                    voice={form.voice}
+                    onChange={setVoice}
+                    missing={errors.missing || []}
+                    shake={shake}
+                  />
+                  {errors.voice && <p key={shake} className="field-error shake">{errors.voice}</p>}
+                </>
+              )}
+
+              {step === 2 && (
+                <>
                   <div className="summary stagger" style={{ '--i': 0 }}>
-                    <span>Your rating</span>
+                    <span>Overall</span>
                     <strong>
                       {'★'.repeat(form.overallRating)}
                       <span className="dim">{'★'.repeat(5 - form.overallRating)}</span>
                     </strong>
+                    <span className="summary-sep" aria-hidden="true" />
+                    <span>Voice avg</span>
+                    <strong className="summary-avg">{voiceAverage(form.voice)}</strong>
                     <span className={`tag ${form.sentiment.toLowerCase()}`}>{form.sentiment}</span>
                   </div>
                   <TextBox
@@ -281,6 +334,11 @@ export default function FeedbackForm() {
       </form>
     </section>
   )
+}
+
+function voiceAverage(voice) {
+  const r = VOICE_ITEMS.map((v) => voice[v.key].rating).filter(Boolean)
+  return r.length ? (r.reduce((a, b) => a + b, 0) / r.length).toFixed(1) + ' / 5' : '–'
 }
 
 function TextBox({ id, label, placeholder, value, onChange, tone, index, rows = 4 }) {

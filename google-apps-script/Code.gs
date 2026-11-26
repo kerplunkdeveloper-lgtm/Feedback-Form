@@ -6,14 +6,32 @@
  *    The Execution log shows the link to your sheet.
  * 3. Deploy → New deployment → Web app (Execute as: Me, Who has access: Anyone).
  */
-const SHEET_NAME = 'Feedback';
+const SHEET_NAME = 'Responses';
+
+// Keep keys in sync with src/voiceItems.js
+const VOICE = [
+  ['atmosphere', 'Work atmosphere'],
+  ['culture', 'Company culture'],
+  ['management', 'Management support'],
+  ['coordination', 'Team coordination'],
+  ['workload', 'Workload management'],
+  ['balance', 'Work-life balance'],
+  ['salary', 'Salary & benefits'],
+  ['hr', 'HR policies'],
+  ['growth', 'Career growth & learning'],
+  ['recognition', 'Recognition & appreciation'],
+  ['facilities', 'Office facilities'],
+  ['satisfaction', 'Overall job satisfaction'],
+];
 
 const HEADERS = [
   'Timestamp',
   'Overall Rating (1-5)',
   'Experience',
-  'Feedback',
-];
+  'Voice Average',
+]
+  .concat(...VOICE.map(([, label]) => [label + ' (Rating)', label + ' (Comment)']))
+  .concat(['Feedback']);
 
 // Works both when the script is attached to a sheet (Extensions → Apps Script)
 // and when it was created on its own at script.google.com.
@@ -40,7 +58,7 @@ function getSheet_() {
       .setFontWeight('bold').setBackground('#0b1233').setFontColor('#ffffff');
     sheet.setFrozenRows(1);
     sheet.setColumnWidth(1, 170);
-    sheet.setColumnWidth(4, 500);
+    sheet.setColumnWidth(HEADERS.length, 450);
   }
   return sheet;
 }
@@ -70,12 +88,26 @@ function doPost(e) {
     const d = JSON.parse(e.postData.contents);
     if (!rating_(d.overallRating)) throw new Error('Invalid rating');
 
-    getSheet_().appendRow([
-      new Date(),
-      rating_(d.overallRating),
-      clean_(d.sentiment),
-      clean_(d.feedback),
-    ]);
+    const byKey = {};
+    (Array.isArray(d.voice) ? d.voice : []).forEach((v) => { if (v && v.key) byKey[v.key] = v; });
+
+    const voiceCells = [];
+    const ratings = [];
+    VOICE.forEach(([key]) => {
+      const v = byKey[key] || {};
+      const r = rating_(v.rating);
+      if (r) ratings.push(r);
+      voiceCells.push(r, clean_(v.comment));
+    });
+    const avg = ratings.length
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : '';
+
+    getSheet_().appendRow(
+      [new Date(), rating_(d.overallRating), clean_(d.sentiment), avg]
+        .concat(voiceCells)
+        .concat([clean_(d.feedback)])
+    );
 
     return json_({ result: 'success' });
   } catch (err) {
