@@ -223,6 +223,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 
 @media (min-width: 640px) {
+  .brand-logo { height: 52px; }
   .container { padding: 0 24px; }
   .card { padding: 36px 36px; }
   .main-grid { gap: 48px; padding-top: 48px; padding-bottom: 80px; }
@@ -332,12 +333,17 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 
 /* ---------- Kerplunk Voice ---------- */
 .voice-progress {
-  position: sticky; top: 0; z-index: 2; margin: 0 -2px 16px; padding: 12px 14px;
-  background: rgba(11, 18, 51, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  margin: 0 0 16px; padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--card-border); border-radius: var(--radius-sm);
 }
 .voice-progress-top { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .voice-progress-top strong { color: var(--text); }
+.voice-part-label strong { color: var(--text); font-weight: 700; }
+.voice-segments { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.voice-seg { height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; transition: box-shadow 0.3s ease; }
+.voice-seg.current { box-shadow: 0 0 0 1px rgba(120, 140, 255, 0.55); }
+.voice-seg > span { display: block; height: 100%; background: var(--grad); border-radius: 99px; transition: width 0.45s cubic-bezier(0.65, 0, 0.35, 1); }
 .voice-done { color: #4ade80; font-weight: 700; animation: rise 0.4s ease both; }
 .voice-bar { height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 .voice-bar span { display: block; height: 100%; background: var(--grad); border-radius: 99px; transition: width 0.45s cubic-bezier(0.65, 0, 0.35, 1); }
@@ -396,6 +402,283 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
   .voice-toggle { margin-left: 44px; }
   .stepper { gap: 8px; }
   .step-item:not(.current) .dot-label { display: none; }
+}
+
+
+/* ---------- Landing page ---------- */
+.main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; }
+.landing { flex: 1; display: flex; align-items: center; padding-top: 48px; padding-bottom: 64px; }
+.landing-inner { max-width: 700px; }
+.eyebrow {
+  font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--brand); margin-bottom: 18px;
+}
+.landing-title {
+  font-family: 'Barlow', sans-serif; font-weight: 800; text-transform: uppercase;
+  font-size: clamp(40px, 7vw, 80px); line-height: 0.98; letter-spacing: -0.01em; color: #fff;
+}
+.landing-title .accent {
+  display: block; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.landing-sub {
+  font-family: 'Barlow', sans-serif; font-weight: 500; font-size: clamp(15px, 1.6vw, 17px);
+  text-transform: uppercase; letter-spacing: 0.02em; color: rgba(243, 210, 122, 0.85);
+  margin-top: 22px; max-width: 560px;
+}
+.landing-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.landing-pills li {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; color: #e6e9f7;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--card-border);
+}
+.landing-pills svg { color: var(--brand); flex-shrink: 0; }
+.btn-start {
+  display: inline-flex; align-items: center; gap: 14px; margin-top: 36px;
+  padding: 17px 34px; border-radius: 14px; background: var(--grad); color: #1a1405;
+  font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.1em; text-transform: uppercase;
+  box-shadow: 0 0 0 0 rgba(233, 180, 76, 0.5), 0 18px 50px rgba(233, 180, 76, 0.28);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn-start svg { transition: transform 0.25s ease; }
+.btn-start:hover { transform: translateY(-3px); box-shadow: 0 0 0 6px rgba(233, 180, 76, 0.12), 0 24px 60px rgba(233, 180, 76, 0.38); }
+.btn-start:hover svg { transform: translateX(5px); }
+.btn-start:active { transform: translateY(0) scale(0.98); }
+.btn-start:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+/* ---------- Form page ---------- */
+.form-page { max-width: 640px; padding-top: 28px; padding-bottom: 72px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 8px 12px 8px 8px;
+  border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--muted); transition: color 0.2s ease, background 0.2s ease;
+}
+.back-link:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+.page-enter { animation: pageEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes pageEnter { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 639px) {
+  .landing { padding-top: 32px; padding-bottom: 48px; align-items: center; justify-content: center; text-align: center; }
+  .landing-inner { margin: 0 auto; }
+  .landing-sub { margin-left: auto; margin-right: auto; }
+  .landing-pills { justify-content: center; }
+  .landing-pills li { padding: 8px 13px; font-size: 12.5px; }
+  .btn-start { width: 100%; justify-content: center; padding: 16px 24px; margin-top: 30px; }
+}
+
+
+/* ---------- Page transitions (View Transitions API) ---------- */
+.header { view-transition-name: site-header; }
+.main { view-transition-name: page-main; }
+.footer { view-transition-name: site-footer; }
+
+/* Keep the background still; only the page content moves. */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+
+::view-transition-group(page-main) { animation-duration: 0.6s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+::view-transition-group(site-footer) { animation-duration: 0.6s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+::view-transition-old(page-main),
+::view-transition-new(page-main) { height: 100%; object-fit: none; object-position: top; }
+
+/* Forward: landing lifts away, form rises in */
+::view-transition-old(page-main) { animation: vtOutUp 0.32s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(page-main) { animation: vtInUp 0.6s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Back: form drops away, landing comes down from above */
+:root[data-nav='back']::view-transition-old(page-main) { animation-name: vtOutDown; }
+:root[data-nav='back']::view-transition-new(page-main) { animation-name: vtInDown; }
+
+@keyframes vtOutUp { to { opacity: 0; transform: translateY(-28px) scale(0.98); filter: blur(4px); } }
+@keyframes vtInUp { from { opacity: 0; transform: translateY(36px) scale(0.985); filter: blur(4px); } }
+@keyframes vtOutDown { to { opacity: 0; transform: translateY(28px) scale(0.98); filter: blur(4px); } }
+@keyframes vtInDown { from { opacity: 0; transform: translateY(-36px) scale(0.985); filter: blur(4px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+
+/* ---------- Mobile polish ---------- */
+.btn { white-space: nowrap; }
+.summary-stat { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+.summary-stat > span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.summary-sep { height: 32px; }
+
+@media (max-width: 639px) {
+  /* More usable width */
+  .container { padding: 0 14px; }
+  .header { padding: 14px 0; }
+  .brand-logo { height: 38px; }
+  .form-page { padding-top: 14px; padding-bottom: 40px; }
+  .back-link { margin-bottom: 10px; padding: 6px 10px 6px 4px; }
+  .card { padding: 22px 16px; border-radius: 20px; }
+
+  /* Headings & spacing */
+  .stepper { padding-bottom: 18px; }
+  .step-viewport { padding-top: 20px; }
+  .step-head { margin-bottom: 20px; }
+  .step-head h2 { font-size: 22px; }
+  .step-head p { font-size: 14px; }
+  .field { margin-bottom: 24px; }
+  .field legend, .field label { font-size: 14.5px; margin-bottom: 12px; }
+
+  /* Bigger touch targets */
+  .stars-lg .star svg { width: 38px; height: 38px; }
+  .stars-lg .stars-row { gap: 6px; }
+  .stars-sm .star svg { width: 28px; height: 28px; }
+  .stars-sm .stars-row { gap: 4px; }
+  .sentiments { gap: 8px; }
+  .sentiment { padding: 16px 4px; font-size: 13.5px; }
+
+  /* 16px+ text in inputs stops iPhone auto-zoom */
+  .textbox textarea, .voice-collapse textarea { font-size: 16px; }
+  .counter { bottom: 8px; }
+
+  /* Sticky action bar keeps Continue/Submit within thumb reach */
+  .nav {
+    position: sticky; bottom: 0; z-index: 3; margin: 8px -16px 0; padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(10, 16, 48, 0.75), rgba(10, 16, 48, 0.96));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 0 0 20px 20px;
+  }
+  .nav .btn { padding: 14px 16px; font-size: 15px; }
+  .nav .btn-ghost { padding-left: 14px; padding-right: 14px; }
+  .fine { font-size: 12px; margin-top: 12px; }
+
+  /* Summary box */
+  .summary { gap: 14px; padding: 12px 14px; }
+  .summary strong { font-size: 15px; }
+  .tag { margin-left: auto; }
+}
+
+
+/* ---------- Form card: aside + main (desktop: two columns, no scrolling) ---------- */
+.connector-fill { width: 100%; transform: scaleX(0); transform-origin: left; transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1); }
+.connector-fill.filled { transform: scaleX(1); }
+.dot-text { display: flex; flex-direction: column; text-align: left; }
+.dot-desc, .aside-head, .aside-note { display: none; }
+.form-aside .back-link { margin-bottom: 12px; }
+
+@media (min-width: 980px) {
+  .form-page { max-width: 1080px; padding-top: 20px; padding-bottom: 36px; }
+  .form-card {
+    display: grid; grid-template-columns: 270px minmax(0, 1fr); padding: 0; overflow: hidden;
+  }
+
+  /* Left panel */
+  .form-aside {
+    display: flex; flex-direction: column; padding: 26px 24px;
+    background: rgba(4, 8, 28, 0.35); border-right: 1px solid var(--card-border);
+  }
+  .form-aside .back-link { align-self: flex-start; margin: -6px 0 18px -8px; }
+  .aside-head { display: block; }
+  .aside-eyebrow {
+    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--brand);
+  }
+  .aside-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+
+  .stepper { flex-direction: column; align-items: stretch; gap: 0; margin-top: 26px; padding: 0; border: 0; }
+  .connector { flex: none; width: 2px; height: 26px; margin: 4px 0 4px 14px; }
+  .connector-fill { height: 100%; transform: scaleY(0); transform-origin: top; }
+  .connector-fill.filled { transform: scaleY(1); }
+  .step-item { align-items: flex-start; gap: 12px; width: 100%; }
+  .dot-text { padding-top: 4px; }
+  .dot-label { font-size: 15px; }
+  .dot-desc { display: block; font-size: 12.5px; color: #6b76a0; margin-top: 2px; font-weight: 500; }
+  .step-item.current .dot-desc { color: var(--muted); }
+  .aside-note { display: block; margin-top: auto; padding-top: 24px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+
+  /* Right panel */
+  .form-main { display: flex; flex-direction: column; padding: 28px 34px 26px; min-height: 520px; min-width: 0; }
+  .form-main .step-viewport { flex: 1; padding-top: 0; }
+  .form-main .fine { display: none; }
+  .step-head { margin-bottom: 20px; }
+  .step-head h2 { font-size: 22px; }
+  .field { margin-bottom: 22px; }
+  .nav { margin-top: 8px; padding-top: 20px; }
+  .nav .btn { padding: 13px 22px; font-size: 15px; }
+
+  /* Kerplunk Voice: 3 areas side by side */
+  .voice-progress { margin-bottom: 14px; }
+  .voice-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; margin-bottom: 12px; }
+  .voice-item { padding: 16px 14px 12px; }
+  .voice-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .voice-label { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .voice-icon { width: 40px; height: 40px; font-size: 20px; }
+  .voice-row .stars-sm .star svg { width: 24px; height: 24px; }
+  .voice-toggle { margin: 8px 0 0 -6px; }
+  .voice-collapse textarea { min-height: 72px; font-size: 13.5px; }
+
+  /* Feedback step */
+  .textbox textarea { min-height: 100px; height: 125px; }
+}
+
+
+/* ---------- Mobile: app-like form ---------- */
+.btn-back { gap: 6px; }
+
+@media (max-width: 639px) {
+  .page--form .footer { display: none; }
+  .page--form .bg-blob { opacity: 0.18; }
+
+  /* Edge-to-edge form instead of a floating card */
+  .form-page { padding: 0 16px 8px; }
+  .form-card {
+    border: 0; border-radius: 0; box-shadow: none; background: transparent;
+    backdrop-filter: none; -webkit-backdrop-filter: none; padding: 8px 0 0;
+  }
+
+  /* One compact top row: round back button + step progress */
+  .form-aside { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border); }
+  .form-aside .back-link {
+    flex-shrink: 0; width: 38px; height: 38px; margin: 0; padding: 0; justify-content: center;
+    border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: var(--text);
+  }
+  .back-text { display: none; }
+  .form-aside .stepper { flex: 1; min-width: 0; padding: 0; border: 0; gap: 6px; }
+  .connector { min-width: 12px; }
+
+  .step-viewport { padding-top: 18px; }
+  .step-head h2 { font-size: 21px; }
+
+  /* Larger, thumb-friendly stars */
+  .stars-lg .star svg { width: 42px; height: 42px; }
+  .stars-lg .stars-row { gap: 4px; }
+  .stars-sm .star svg { width: 30px; height: 30px; }
+  .stars-sm .stars-row { gap: 6px; }
+  .stars-label { margin-top: 4px; }
+  .star { padding: 3px; }
+
+  /* Voice cards a bit roomier for touch */
+  .voice-item { padding: 12px 14px 8px; }
+  .voice-row .stars { margin-left: 0; }
+  .voice-row { gap: 10px; }
+  .voice-toggle { margin-left: -6px; margin-top: 4px; padding: 6px 8px; }
+
+  /* Bottom action bar: compact Back, wide Next */
+  /* Buttons sit right after the content (not floating over it) */
+  .nav {
+    position: static; margin: 6px 0 0; padding: 16px 0 0; border-radius: 0;
+    background: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+    border-top: 1px solid var(--card-border);
+  }
+  .btn-back { width: 52px; padding: 14px 0 !important; flex-shrink: 0; font-size: 18px !important; }
+  .btn-back .btn-label { display: none; }
+  .nav .btn-primary { font-size: 16px; padding: 15px 16px; }
+  .form-main .fine { margin: 10px 0 4px; }
+
+  /* Kerplunk Voice: fit 3 areas on one phone screen */
+  [data-step='1'] .step-head { margin-bottom: 12px; }
+  [data-step='1'] .step-head p { display: none; }
+  .voice-progress { padding: 10px 12px; margin-bottom: 12px; }
+  .voice-list { gap: 8px; }
+  .voice-item { padding: 10px 12px 6px; }
+  .voice-row { gap: 8px; }
+  .voice-toggle { margin-top: 2px; }
+
+  /* Success screen fills the space nicely */
+  .success-card { margin-top: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

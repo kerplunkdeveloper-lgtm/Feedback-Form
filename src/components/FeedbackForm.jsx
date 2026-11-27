@@ -1,7 +1,7 @@
 import { Fragment, useRef, useState } from 'react'
-import StarRating from './StarRating.jsx'
+import StarRating, { tap } from './StarRating.jsx'
 import VoiceStep from './VoiceStep.jsx'
-import { VOICE_ITEMS } from '../voiceItems.js'
+import { VOICE_ITEMS, VOICE_PARTS } from '../voiceItems.js'
 
 const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL
 
@@ -12,14 +12,19 @@ const SENTIMENTS = [
 ]
 
 const STEPS = [
-  { title: 'Rating', heading: 'How would you rate us?' },
+  { title: 'Rating', desc: 'Your overall impression', heading: 'How would you rate us?' },
   {
     title: 'Kerplunk Voice',
+    desc: '12 areas in 4 quick parts',
     heading: 'Kerplunk Voice',
-    sub: 'Your voice matters. Rate each area, and add a comment wherever you have something to say.',
+    sub: 'Rate each area. Comments are optional.',
   },
-  { title: 'Feedback', heading: 'Share your feedback', sub: 'Good or bad, be honest. Nobody will know it was you.' },
+  { title: 'Feedback', desc: 'Tell us in your own words', heading: 'Share your feedback', sub: 'Good or bad, be honest. Nobody will know it was you.' },
 ]
+
+// Internal pages: Rating, one page per Kerplunk Voice part, then Feedback.
+const PAGES = [{ step: 0 }, ...VOICE_PARTS.map((_, part) => ({ step: 1, part })), { step: 2 }]
+const firstPageOf = (step) => PAGES.findIndex((p) => p.step === step)
 
 const MAX = 1000
 
@@ -31,14 +36,17 @@ const initialState = {
   website: '', // honeypot – real users never see/fill this
 }
 
-function validateStep(step, form) {
+const missingMsg = (n) => `Please rate ${n === 1 ? 'this area' : `all ${n} areas`} to continue.`
+
+function validatePage(page, form) {
   const e = {}
+  const { step, part } = PAGES[page]
   if (step === 0 && !form.overallRating) e.overallRating = 'Please pick a star rating to continue.'
   if (step === 0 && !form.sentiment) e.sentiment = 'Please choose how your experience felt.'
   if (step === 1) {
-    const missing = VOICE_ITEMS.filter((v) => !form.voice[v.key].rating).map((v) => v.key)
+    const missing = VOICE_PARTS[part].items.filter((v) => !form.voice[v.key].rating).map((v) => v.key)
     if (missing.length) {
-      e.voice = `Please rate all ${VOICE_ITEMS.length} areas (${missing.length} left).`
+      e.voice = missingMsg(missing.length)
       e.missing = missing
     }
   }
@@ -48,9 +56,10 @@ function validateStep(step, form) {
   return e
 }
 
-export default function FeedbackForm() {
+export default function FeedbackForm({ onExit }) {
   const [form, setForm] = useState(initialState)
-  const [step, setStep] = useState(0)
+  const [page, setPage] = useState(0)
+  const step = PAGES[page].step
   const [dir, setDir] = useState('next') // animation direction
   const [errors, setErrors] = useState({})
   const [shake, setShake] = useState(0)
@@ -63,9 +72,9 @@ export default function FeedbackForm() {
   }
 
   const goTo = (target) => {
-    setDir(target > step ? 'next' : 'prev')
+    setDir(target > page ? 'next' : 'prev')
     setErrors({})
-    setStep(target)
+    setPage(target)
     // Keep the card in view on small screens.
     const top = cardRef.current?.getBoundingClientRect().top ?? 0
     if (top < 0) cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -89,27 +98,27 @@ export default function FeedbackForm() {
       if (!e.missing) return e
       const missing = e.missing.filter((k) => k !== key || !value.rating)
       return missing.length
-        ? { ...e, missing, voice: `Please rate all ${VOICE_ITEMS.length} areas (${missing.length} left).` }
+        ? { ...e, missing, voice: missingMsg(missing.length) }
         : {}
     })
   }
 
   const next = () => {
-    const e = validateStep(step, form)
+    const e = validatePage(page, form)
     if (Object.keys(e).length) return failStep(e)
-    goTo(step + 1)
+    goTo(page + 1)
   }
 
-  const back = () => step > 0 && goTo(step - 1)
+  const back = () => page > 0 && goTo(page - 1)
 
   const handleSubmit = async (ev) => {
     ev.preventDefault()
-    if (step < STEPS.length - 1) return next()
+    if (page < PAGES.length - 1) return next()
 
-    for (let s = 0; s < STEPS.length; s++) {
-      const e = validateStep(s, form)
+    for (let p = 0; p < PAGES.length; p++) {
+      const e = validatePage(p, form)
       if (Object.keys(e).length) {
-        goTo(s)
+        goTo(p)
         return failStep(e)
       }
     }
@@ -150,7 +159,7 @@ export default function FeedbackForm() {
   const reset = () => {
     setForm(initialState)
     setErrors({})
-    setStep(0)
+    setPage(0)
     setDir('prev')
     setStatus('idle')
   }
@@ -174,38 +183,61 @@ export default function FeedbackForm() {
     )
   }
 
-  const isLast = step === STEPS.length - 1
+  const isLast = page === PAGES.length - 1
+  const voicePart = PAGES[page].part
+  const moreVoice = voicePart !== undefined && voicePart < VOICE_PARTS.length - 1
 
   return (
     <section className="card form-card" id="feedback" ref={cardRef}>
-      {/* Stepper */}
+      <aside className="form-aside">
+        {onExit && (
+          <button type="button" className="back-link" onClick={onExit} aria-label="Back to start">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="back-text">Back</span>
+          </button>
+        )}
+        <div className="aside-head">
+          <p className="aside-eyebrow">Kerplunk Media</p>
+          <h3 className="aside-title">Feedback form</h3>
+        </div>
+
       <ol className="stepper" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
         {STEPS.map((s, i) => (
           <Fragment key={s.title}>
             {i > 0 && (
               <li className="connector" aria-hidden="true">
-                <span className="connector-fill" style={{ width: i <= step ? '100%' : '0%' }} />
+                <span className={`connector-fill ${i <= step ? 'filled' : ''}`} />
               </li>
             )}
             <li>
               <button
                 type="button"
                 className={`step-item ${i === step ? 'current' : ''} ${i < step ? 'done' : ''}`}
-                onClick={() => i < step && goTo(i)}
+                onClick={() => i < step && goTo(firstPageOf(i))}
                 disabled={i >= step}
                 aria-current={i === step ? 'step' : undefined}
               >
                 <span className="dot">{i < step ? '✓' : i + 1}</span>
-                <span className="dot-label">{s.title}</span>
+                <span className="dot-text">
+                  <span className="dot-label">{s.title}</span>
+                  <span className="dot-desc">{s.desc}</span>
+                </span>
               </button>
             </li>
           </Fragment>
         ))}
       </ol>
 
-      <form onSubmit={handleSubmit} noValidate>
+        <p className="aside-note">
+          🔒 100% anonymous. We don't collect your name, email or IP address.
+        </p>
+      </aside>
+
+      <form className="form-main" onSubmit={handleSubmit} noValidate>
         <div className="step-viewport">
-          <div key={step} className={`step-panel slide-${dir}`}>
+          <div key={page} className={`step-panel slide-${dir}`} data-step={step}>
             <div className="step-head">
               <h2>{STEPS[step].heading}</h2>
               {STEPS[step].sub && <p>{STEPS[step].sub}</p>}
@@ -238,7 +270,10 @@ export default function FeedbackForm() {
                           style={{ '--i': i }}
                           className={`sentiment stagger ${s.className} ${form.sentiment === s.value ? 'active' : ''}`}
                           aria-pressed={form.sentiment === s.value}
-                          onClick={() => set('sentiment', s.value)}
+                          onClick={() => {
+                            tap()
+                            set('sentiment', s.value)
+                          }}
                         >
                           <span className="sentiment-emoji" aria-hidden="true">{s.emoji}</span>
                           {s.value}
@@ -254,6 +289,7 @@ export default function FeedbackForm() {
               {step === 1 && (
                 <>
                   <VoiceStep
+                    part={voicePart}
                     voice={form.voice}
                     onChange={setVoice}
                     missing={errors.missing || []}
@@ -266,14 +302,18 @@ export default function FeedbackForm() {
               {step === 2 && (
                 <>
                   <div className="summary stagger" style={{ '--i': 0 }}>
-                    <span>Overall</span>
-                    <strong>
-                      {'★'.repeat(form.overallRating)}
-                      <span className="dim">{'★'.repeat(5 - form.overallRating)}</span>
-                    </strong>
+                    <div className="summary-stat">
+                      <span>Overall</span>
+                      <strong>
+                        {'★'.repeat(form.overallRating)}
+                        <span className="dim">{'★'.repeat(5 - form.overallRating)}</span>
+                      </strong>
+                    </div>
                     <span className="summary-sep" aria-hidden="true" />
-                    <span>Voice avg</span>
-                    <strong className="summary-avg">{voiceAverage(form.voice)}</strong>
+                    <div className="summary-stat">
+                      <span>Voice avg</span>
+                      <strong className="summary-avg">{voiceAverage(form.voice)}</strong>
+                    </div>
                     <span className={`tag ${form.sentiment.toLowerCase()}`}>{form.sentiment}</span>
                   </div>
                   <TextBox
@@ -314,8 +354,15 @@ export default function FeedbackForm() {
 
         <div className="nav">
           {step > 0 && (
-            <button type="button" className="btn btn-ghost" onClick={back} disabled={status === 'sending'}>
-              ← Back
+            <button
+              type="button"
+              className="btn btn-ghost btn-back"
+              onClick={back}
+              disabled={status === 'sending'}
+              aria-label="Previous"
+            >
+              <span aria-hidden="true">←</span>
+              <span className="btn-label">Back</span>
             </button>
           )}
           <button type="submit" className="btn btn-primary" disabled={status === 'sending'}>
@@ -325,6 +372,8 @@ export default function FeedbackForm() {
               </>
             ) : isLast ? (
               'Submit feedback ✓'
+            ) : moreVoice ? (
+              'Next →'
             ) : (
               'Continue →'
             )}

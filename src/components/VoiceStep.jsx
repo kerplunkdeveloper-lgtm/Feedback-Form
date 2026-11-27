@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import StarRating from './StarRating.jsx'
-import { VOICE_ITEMS } from '../voiceItems.js'
+import { VOICE_ITEMS, VOICE_PARTS } from '../voiceItems.js'
 
 const LABELS = ['', 'Very poor', 'Poor', 'Okay', 'Good', 'Excellent']
 const MAX_COMMENT = 500
 
-export default function VoiceStep({ voice, onChange, missing, shake }) {
+export default function VoiceStep({ part, voice, onChange, missing, shake }) {
+  const items = VOICE_PARTS[part].items
   const [open, setOpen] = useState(() =>
-    Object.fromEntries(VOICE_ITEMS.map((v) => [v.key, Boolean(voice[v.key].comment)]))
+    Object.fromEntries(items.map((v) => [v.key, Boolean(voice[v.key].comment)]))
   )
   const rated = VOICE_ITEMS.filter((v) => voice[v.key].rating).length
-  const pct = (rated / VOICE_ITEMS.length) * 100
 
   const update = (key, patch) => onChange(key, { ...voice[key], ...patch })
 
@@ -18,18 +18,27 @@ export default function VoiceStep({ voice, onChange, missing, shake }) {
     <div className="voice">
       <div className="voice-progress stagger" style={{ '--i': 0 }}>
         <div className="voice-progress-top">
-          <span>
-            <strong>{rated}</strong> of {VOICE_ITEMS.length} rated
+          <span className="voice-part-label">
+            Part {part + 1} of {VOICE_PARTS.length} · <strong>{VOICE_PARTS[part].title}</strong>
           </span>
-          {rated === VOICE_ITEMS.length && <span className="voice-done">All done ✓</span>}
+          <span className={rated === VOICE_ITEMS.length ? 'voice-done' : ''}>
+            {rated}/{VOICE_ITEMS.length} rated
+          </span>
         </div>
-        <div className="voice-bar">
-          <span style={{ width: `${pct}%` }} />
+        <div className="voice-segments" aria-hidden="true">
+          {VOICE_PARTS.map((p, i) => {
+            const done = p.items.filter((v) => voice[v.key].rating).length
+            return (
+              <span key={p.title} className={`voice-seg ${i === part ? 'current' : ''}`}>
+                <span style={{ width: `${(done / p.items.length) * 100}%` }} />
+              </span>
+            )
+          })}
         </div>
       </div>
 
       <ol className="voice-list">
-        {VOICE_ITEMS.map((item, i) => {
+        {items.map((item, i) => {
           const v = voice[item.key]
           const isMissing = missing.includes(item.key)
           const isOpen = open[item.key]

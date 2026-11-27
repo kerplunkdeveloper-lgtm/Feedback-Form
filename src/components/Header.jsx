@@ -1,12 +1,20 @@
 import { useState } from 'react'
 
-export default function Header() {
+export default function Header({ onHome }) {
   const [logoOk, setLogoOk] = useState(true)
 
   return (
     <header className="header">
       <div className="container header-inner">
-        <a href="#" className="brand" aria-label="Kerplunk Media home">
+        <a
+          href="/"
+          className="brand"
+          aria-label="Kerplunk Media home"
+          onClick={(e) => {
+            e.preventDefault()
+            onHome?.()
+          }}
+        >
           {logoOk ? (
             <img
               src="/logo.png"
